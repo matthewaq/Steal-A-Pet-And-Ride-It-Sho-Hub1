@@ -1,0 +1,686 @@
+-- ShoField stealth stable
+-- supported: Xeno, Solara, Real, Delta, Krnl
+
+local function rn(n)
+    local c = "Il1O0abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    local s = ""
+    for i = 1, (n or 10) do
+        local i2 = math.random(1, #c)
+        s = s .. c:sub(i2, i2)
+    end
+    return s
+end
+
+task.wait(0.6 + math.random() * 1.1)
+
+local ALLOWED = { xeno = true, solara = true, real = true, delta = true, krnl = true, ["krnl.exe"] = true }
+
+local function execName()
+    local n = "Unknown"
+    pcall(function()
+        if identifyexecutor then n = identifyexecutor()
+        elseif getexecutorname then n = getexecutorname() end
+    end)
+    return tostring(n)
+end
+
+local detected = execName()
+local low = string.lower(detected)
+local allowed = false
+for k in pairs(ALLOWED) do
+    if string.find(low, k, 1, true) then allowed = true break end
+end
+
+local S = {
+    Players = game:GetService("Players"),
+    RS = game:GetService("RunService"),
+    UIS = game:GetService("UserInputService"),
+    TS = game:GetService("TweenService"),
+    VU = game:GetService("VirtualUser"),
+    WS = game:GetService("Workspace"),
+    CG = game:GetService("CoreGui"),
+    TP = game:GetService("TeleportService"),
+}
+
+local LP = S.Players.LocalPlayer
+local Char, Hum, HRP
+
+local function pullChar()
+    Char = LP.Character
+    if not Char then
+        Char = LP.CharacterAdded:Wait()
+    end
+    Hum = Char:FindFirstChildOfClass("Humanoid") or Char:WaitForChild("Humanoid", 5)
+    HRP = Char:FindFirstChild("HumanoidRootPart") or Char:WaitForChild("HumanoidRootPart", 5)
+end
+
+pcall(pullChar)
+LP.CharacterAdded:Connect(function()
+    task.wait(0.35)
+    pcall(pullChar)
+end)
+
+local function parentGui(g)
+    local ok = false
+    pcall(function()
+        if gethui then g.Parent = gethui() ok = true end
+    end)
+    if not ok then
+        pcall(function() g.Parent = S.CG ok = true end)
+    end
+    if not ok then
+        g.Parent = LP:WaitForChild("PlayerGui")
+    end
+end
+
+-- welcomer
+do
+    local g = Instance.new("ScreenGui")
+    g.Name = rn(12)
+    g.IgnoreGuiInset = true
+    g.ResetOnSpawn = false
+    g.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    parentGui(g)
+
+    local t = Instance.new("TextLabel")
+    t.AnchorPoint = Vector2.new(0.5, 0.5)
+    t.Position = UDim2.new(0.5, 0, 0.46, 0)
+    t.Size = UDim2.new(1, 0, 0, 70)
+    t.BackgroundTransparency = 1
+    t.Text = "ShoField"
+    t.TextColor3 = Color3.fromRGB(255, 255, 255)
+    t.TextSize = 56
+    t.Font = Enum.Font.GothamBold
+    t.TextTransparency = 1
+    t.Parent = g
+
+    local s = Instance.new("TextLabel")
+    s.AnchorPoint = Vector2.new(0.5, 0.5)
+    s.Position = UDim2.new(0.5, 0, 0.46, 55)
+    s.Size = UDim2.new(1, 0, 0, 28)
+    s.BackgroundTransparency = 1
+    s.Text = "loading..."
+    s.TextColor3 = Color3.fromRGB(220, 220, 220)
+    s.TextSize = 18
+    s.Font = Enum.Font.Gotham
+    s.TextTransparency = 1
+    s.Parent = g
+
+    local fi = TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    S.TS:Create(t, fi, { TextTransparency = 0 }):Play()
+    S.TS:Create(s, fi, { TextTransparency = 0.25 }):Play()
+    task.wait(5)
+    local fo = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+    local a = S.TS:Create(t, fo, { TextTransparency = 1 })
+    local b = S.TS:Create(s, fo, { TextTransparency = 1 })
+    a:Play() b:Play()
+    a.Completed:Wait()
+    g:Destroy()
+end
+
+if not allowed then
+    local g = Instance.new("ScreenGui")
+    g.Name = rn(12)
+    g.IgnoreGuiInset = true
+    g.ResetOnSpawn = false
+    parentGui(g)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(0, 420, 0, 220)
+    f.Position = UDim2.new(0.5, -210, 0.5, -110)
+    f.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    f.BorderSizePixel = 0
+    f.Parent = g
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 10)
+    local t = Instance.new("TextLabel")
+    t.Size = UDim2.new(1, -30, 0, 40)
+    t.Position = UDim2.new(0, 15, 0, 20)
+    t.BackgroundTransparency = 1
+    t.Text = "ShoField"
+    t.TextColor3 = Color3.fromRGB(255, 255, 255)
+    t.TextSize = 28
+    t.Font = Enum.Font.GothamBold
+    t.TextXAlignment = Enum.TextXAlignment.Left
+    t.Parent = f
+    local m = Instance.new("TextLabel")
+    m.Size = UDim2.new(1, -30, 0, 90)
+    m.Position = UDim2.new(0, 15, 0, 70)
+    m.BackgroundTransparency = 1
+    m.Text = "Executor not supported.\nDetected: " .. detected .. "\n\nSupported: Xeno, Solara, Real, Delta, Krnl"
+    m.TextColor3 = Color3.fromRGB(200, 200, 200)
+    m.TextSize = 15
+    m.Font = Enum.Font.Gotham
+    m.TextXAlignment = Enum.TextXAlignment.Left
+    m.TextYAlignment = Enum.TextYAlignment.Top
+    m.TextWrapped = true
+    m.Parent = f
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 120, 0, 34)
+    b.Position = UDim2.new(0.5, -60, 1, -50)
+    b.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+    b.Text = "Close"
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.Font = Enum.Font.Gotham
+    b.TextSize = 14
+    b.Parent = f
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    b.MouseButton1Click:Connect(function() g:Destroy() end)
+    return
+end
+
+-- state
+local F = {
+    Grab = false, Train = false, Upgrade = false, Collect = false,
+    SpeedLoop = false, InfJump = false, Noclip = false, AntiAFK = true,
+    WalkSpeed = 16,
+}
+local C = {}
+
+S.Players.LocalPlayer.Idled:Connect(function()
+    if F.AntiAFK then
+        pcall(function()
+            S.VU:CaptureController()
+            S.VU:ClickButton2(Vector2.new())
+        end)
+    end
+end)
+
+local function hrp()
+    if not HRP or not HRP.Parent then pcall(pullChar) end
+    return HRP
+end
+
+local function fireP(p)
+    if not p or not p.Parent then return end
+    pcall(function()
+        if fireproximityprompt then
+            fireproximityprompt(p)
+        else
+            p:InputHoldBegin()
+            task.wait((p.HoldDuration and p.HoldDuration > 0) and p.HoldDuration or 0.05)
+            p:InputHoldEnd()
+        end
+    end)
+end
+
+local function fireC(d)
+    if not d or not d.Parent then return end
+    pcall(function()
+        if fireclickdetector then fireclickdetector(d) end
+    end)
+end
+
+-- lightweight prompt cache (refresh every few seconds)
+local cache = { prompts = {}, clicks = {}, t = 0 }
+local function refreshCache()
+    local now = os.clock()
+    if now - cache.t < 2.5 then return end
+    cache.t = now
+    local pr, cl = {}, {}
+    for _, o in ipairs(S.WS:GetDescendants()) do
+        if o:IsA("ProximityPrompt") then
+            table.insert(pr, o)
+        elseif o:IsA("ClickDetector") then
+            table.insert(cl, o)
+        end
+    end
+    cache.prompts = pr
+    cache.clicks = cl
+end
+
+local function matchText(s, list)
+    s = string.lower(s or "")
+    for i = 1, #list do
+        if string.find(s, list[i], 1, true) then return true end
+    end
+    return false
+end
+
+local GRAB_KEYS = { "steal", "grab", "cage", "take", "pick" }
+local TRAIN_KEYS = { "train", "treadmill", "speed", "workout" }
+local UP_KEYS = { "upgrade", "buy", "purchase" }
+local COL_KEYS = { "collect", "cash", "claim", "money" }
+
+-- UI
+local gui = Instance.new("ScreenGui")
+gui.Name = rn(14)
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+parentGui(gui)
+
+local main = Instance.new("Frame")
+main.Name = rn(8)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.Position = UDim2.new(0.5, 0, 0.5, 0)
+main.Size = UDim2.new(0, 520, 0, 380)
+main.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+main.BorderSizePixel = 0
+main.Parent = gui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(40, 40, 50)
+stroke.Thickness = 1
+stroke.Parent = main
+
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 46)
+header.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+header.BorderSizePixel = 0
+header.Parent = main
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12)
+local hf = Instance.new("Frame")
+hf.Size = UDim2.new(1, 0, 0, 14)
+hf.Position = UDim2.new(0, 0, 1, -14)
+hf.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+hf.BorderSizePixel = 0
+hf.Parent = header
+
+local ht = Instance.new("TextLabel")
+ht.Size = UDim2.new(1, -90, 1, 0)
+ht.Position = UDim2.new(0, 16, 0, 0)
+ht.BackgroundTransparency = 1
+ht.Text = "ShoField"
+ht.TextColor3 = Color3.fromRGB(255, 255, 255)
+ht.TextSize = 20
+ht.Font = Enum.Font.GothamBold
+ht.TextXAlignment = Enum.TextXAlignment.Left
+ht.Parent = header
+
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -38, 0.5, -15)
+close.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+close.Text = "×"
+close.TextColor3 = Color3.fromRGB(220, 220, 220)
+close.TextSize = 18
+close.Font = Enum.Font.GothamBold
+close.Parent = header
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 6)
+close.MouseButton1Click:Connect(function()
+    for _, c in pairs(C) do pcall(function() c:Disconnect() end) end
+    gui:Destroy()
+end)
+
+local side = Instance.new("Frame")
+side.Size = UDim2.new(0, 120, 1, -56)
+side.Position = UDim2.new(0, 10, 0, 50)
+side.BackgroundTransparency = 1
+side.Parent = main
+
+local pages = Instance.new("Frame")
+pages.Size = UDim2.new(1, -150, 1, -66)
+pages.Position = UDim2.new(0, 140, 0, 56)
+pages.BackgroundTransparency = 1
+pages.Parent = main
+
+local PF = {}
+local function show(name)
+    for n, f in pairs(PF) do f.Visible = (n == name) end
+end
+
+local function tab(txt, order)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, 0, 0, 34)
+    b.Position = UDim2.new(0, 0, 0, (order - 1) * 40)
+    b.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+    b.Text = txt
+    b.TextColor3 = Color3.fromRGB(220, 220, 230)
+    b.TextSize = 13
+    b.Font = Enum.Font.Gotham
+    b.Parent = side
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+    b.MouseButton1Click:Connect(function()
+        show(txt)
+        for _, c in ipairs(side:GetChildren()) do
+            if c:IsA("TextButton") then c.BackgroundColor3 = Color3.fromRGB(28, 28, 36) end
+        end
+        b.BackgroundColor3 = Color3.fromRGB(50, 45, 80)
+    end)
+end
+
+local function page(name)
+    local f = Instance.new("ScrollingFrame")
+    f.Size = UDim2.new(1, 0, 1, 0)
+    f.BackgroundTransparency = 1
+    f.BorderSizePixel = 0
+    f.ScrollBarThickness = 4
+    f.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 100)
+    f.CanvasSize = UDim2.new(0, 0, 0, 0)
+    f.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    f.Visible = false
+    f.Parent = pages
+    local l = Instance.new("UIListLayout")
+    l.Padding = UDim.new(0, 8)
+    l.SortOrder = Enum.SortOrder.LayoutOrder
+    l.Parent = f
+    PF[name] = f
+    return f
+end
+
+local function sec(p, t)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, 0, 0, 22)
+    l.BackgroundTransparency = 1
+    l.Text = t
+    l.TextColor3 = Color3.fromRGB(140, 140, 160)
+    l.TextSize = 12
+    l.Font = Enum.Font.GothamBold
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Parent = p
+end
+
+local function tog(p, text, key, cb)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -6, 0, 36)
+    row.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+    row.BorderSizePixel = 0
+    row.Parent = p
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+    local lab = Instance.new("TextLabel")
+    lab.Size = UDim2.new(1, -60, 1, 0)
+    lab.Position = UDim2.new(0, 12, 0, 0)
+    lab.BackgroundTransparency = 1
+    lab.Text = text
+    lab.TextColor3 = Color3.fromRGB(230, 230, 240)
+    lab.TextSize = 13
+    lab.Font = Enum.Font.Gotham
+    lab.TextXAlignment = Enum.TextXAlignment.Left
+    lab.Parent = row
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 44, 0, 22)
+    btn.Position = UDim2.new(1, -52, 0.5, -11)
+    btn.BackgroundColor3 = F[key] and Color3.fromRGB(80, 60, 160) or Color3.fromRGB(45, 45, 55)
+    btn.Text = F[key] and "ON" or "OFF"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 11
+    btn.Font = Enum.Font.GothamBold
+    btn.Parent = row
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(function()
+        F[key] = not F[key]
+        btn.Text = F[key] and "ON" or "OFF"
+        btn.BackgroundColor3 = F[key] and Color3.fromRGB(80, 60, 160) or Color3.fromRGB(45, 45, 55)
+        if cb then cb(F[key]) end
+    end)
+end
+
+local function btn(p, text, cb)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, -6, 0, 34)
+    b.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
+    b.Text = text
+    b.TextColor3 = Color3.fromRGB(240, 240, 250)
+    b.TextSize = 13
+    b.Font = Enum.Font.Gotham
+    b.Parent = p
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+    b.MouseButton1Click:Connect(cb)
+end
+
+local function sld(p, text, min, max, def, key, cb)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -6, 0, 52)
+    row.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+    row.BorderSizePixel = 0
+    row.Parent = p
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+    local lab = Instance.new("TextLabel")
+    lab.Size = UDim2.new(1, -20, 0, 20)
+    lab.Position = UDim2.new(0, 12, 0, 4)
+    lab.BackgroundTransparency = 1
+    lab.Text = text .. ": " .. def
+    lab.TextColor3 = Color3.fromRGB(230, 230, 240)
+    lab.TextSize = 13
+    lab.Font = Enum.Font.Gotham
+    lab.TextXAlignment = Enum.TextXAlignment.Left
+    lab.Parent = row
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, -24, 0, 6)
+    bar.Position = UDim2.new(0, 12, 0, 34)
+    bar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    bar.BorderSizePixel = 0
+    bar.Parent = row
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((def - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(100, 80, 200)
+    fill.BorderSizePixel = 0
+    fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+    local drag = false
+    local function upd(x)
+        local rel = math.clamp((x - bar.AbsolutePosition.X) / math.max(bar.AbsoluteSize.X, 1), 0, 1)
+        local val = math.floor(min + rel * (max - min) + 0.5)
+        F[key] = val
+        fill.Size = UDim2.new(rel, 0, 1, 0)
+        lab.Text = text .. ": " .. val
+        if cb then cb(val) end
+    end
+    bar.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            drag = true upd(i.Position.X)
+        end
+    end)
+    S.UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end
+    end)
+    S.UIS.InputChanged:Connect(function(i)
+        if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            upd(i.Position.X)
+        end
+    end)
+end
+
+tab("Main", 1) tab("Farm", 2) tab("Speed", 3) tab("Player", 4) tab("Teleports", 5) tab("Misc", 6)
+local MainP = page("Main")
+local FarmP = page("Farm")
+local SpeedP = page("Speed")
+local PlayerP = page("Player")
+local TeleP = page("Teleports")
+local MiscP = page("Misc")
+
+sec(MainP, "INFO")
+local info = Instance.new("TextLabel")
+info.Size = UDim2.new(1, -6, 0, 70)
+info.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+info.BorderSizePixel = 0
+info.Text = "  Steal A Pet And Ride It\n  Executor: " .. detected .. "\n  Supported: Xeno • Solara • Real • Delta • Krnl"
+info.TextColor3 = Color3.fromRGB(200, 200, 210)
+info.TextSize = 13
+info.Font = Enum.Font.Gotham
+info.TextXAlignment = Enum.TextXAlignment.Left
+info.TextYAlignment = Enum.TextYAlignment.Center
+info.Parent = MainP
+Instance.new("UICorner", info).CornerRadius = UDim.new(0, 8)
+sec(MainP, "ACTIONS")
+btn(MainP, "Destroy UI", function()
+    for _, c in pairs(C) do pcall(function() c:Disconnect() end) end
+    gui:Destroy()
+end)
+
+sec(FarmP, "AUTO")
+tog(FarmP, "Auto Grab Cages", "Grab", function(on)
+    if not on then return end
+    task.spawn(function()
+        while F.Grab do
+            refreshCache()
+            for _, p in ipairs(cache.prompts) do
+                if not F.Grab then break end
+                if matchText(p.ActionText, GRAB_KEYS) or matchText(p.Name, GRAB_KEYS) then
+                    fireP(p)
+                end
+            end
+            for _, d in ipairs(cache.clicks) do
+                if not F.Grab then break end
+                if d.Parent and matchText(d.Parent.Name, GRAB_KEYS) then fireC(d) end
+            end
+            task.wait(0.4 + math.random() * 0.25)
+        end
+    end)
+end)
+
+tog(FarmP, "Auto Train", "Train", function(on)
+    if not on then return end
+    task.spawn(function()
+        while F.Train do
+            refreshCache()
+            for _, p in ipairs(cache.prompts) do
+                if not F.Train then break end
+                if matchText(p.ActionText, TRAIN_KEYS) then fireP(p) end
+            end
+            task.wait(0.28 + math.random() * 0.18)
+        end
+    end)
+end)
+
+tog(FarmP, "Auto Upgrade", "Upgrade", function(on)
+    if not on then return end
+    task.spawn(function()
+        while F.Upgrade do
+            refreshCache()
+            for _, p in ipairs(cache.prompts) do
+                if not F.Upgrade then break end
+                if matchText(p.ActionText, UP_KEYS) then fireP(p) end
+            end
+            task.wait(0.65 + math.random() * 0.35)
+        end
+    end)
+end)
+
+tog(FarmP, "Auto Collect Cash", "Collect", function(on)
+    if not on then return end
+    task.spawn(function()
+        while F.Collect do
+            refreshCache()
+            for _, p in ipairs(cache.prompts) do
+                if not F.Collect then break end
+                if matchText(p.ActionText, COL_KEYS) then fireP(p) end
+            end
+            task.wait(0.85 + math.random() * 0.35)
+        end
+    end)
+end)
+
+btn(FarmP, "Collect Once", function()
+    refreshCache()
+    for _, p in ipairs(cache.prompts) do
+        if matchText(p.ActionText, COL_KEYS) then fireP(p) end
+    end
+end)
+
+sec(SpeedP, "MOVEMENT")
+sld(SpeedP, "WalkSpeed", 16, 300, 16, "WalkSpeed", function(v)
+    if Hum and Hum.Parent then Hum.WalkSpeed = v end
+end)
+tog(SpeedP, "Speed Boost Loop", "SpeedLoop", function(on)
+    if not on then return end
+    task.spawn(function()
+        while F.SpeedLoop do
+            if Hum and Hum.Parent then Hum.WalkSpeed = F.WalkSpeed end
+            task.wait(0.22)
+        end
+        if Hum and Hum.Parent then Hum.WalkSpeed = 16 end
+    end)
+end)
+tog(SpeedP, "Infinite Jump", "InfJump", function(on)
+    if on then
+        C.InfJump = S.UIS.JumpRequest:Connect(function()
+            if F.InfJump and Hum and Hum.Parent then
+                Hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end)
+    elseif C.InfJump then
+        C.InfJump:Disconnect() C.InfJump = nil
+    end
+end)
+tog(SpeedP, "Noclip", "Noclip", function(on)
+    if on then
+        C.Noclip = S.RS.Stepped:Connect(function()
+            if F.Noclip and Char then
+                for _, p in ipairs(Char:GetDescendants()) do
+                    if p:IsA("BasePart") then p.CanCollide = false end
+                end
+            end
+        end)
+    elseif C.Noclip then
+        C.Noclip:Disconnect() C.Noclip = nil
+    end
+end)
+
+sec(PlayerP, "UTILITY")
+tog(PlayerP, "Anti AFK", "AntiAFK", function() end)
+btn(PlayerP, "Reset Character", function()
+    if Hum and Hum.Parent then Hum.Health = 0 end
+end)
+btn(PlayerP, "Rejoin", function()
+    pcall(function() S.TP:Teleport(game.PlaceId, LP) end)
+end)
+
+sec(TeleP, "ZONES")
+local Zones = {
+    "Mushroom Garden","Honey Meadow","Jungle Ruins","Dino Valley","Snowy Peaks",
+    "Desert Pyramids","Candy Kingdom","Volcano","Sky Kingdom","Outer Space",
+    "Moon Base","Red Planet","Ocean Planet","Crystal","Shadow","Storm","Black Hole",
+}
+for _, z in ipairs(Zones) do
+    btn(TeleP, z, function()
+        local h = hrp()
+        if not h then return end
+        local key = string.lower(z):sub(1, 5)
+        for _, o in ipairs(S.WS:GetDescendants()) do
+            if o:IsA("BasePart") and string.find(string.lower(o.Name), key, 1, true) then
+                h.CFrame = o.CFrame + Vector3.new(0, 5, 0)
+                break
+            end
+        end
+    end)
+end
+sec(TeleP, "QUICK")
+btn(TeleP, "Barn / Base", function()
+    local h = hrp()
+    if not h then return end
+    for _, o in ipairs(S.WS:GetDescendants()) do
+        if o:IsA("BasePart") then
+            local n = string.lower(o.Name)
+            if n:find("barn") or n:find("base") or n:find("home") or n:find("plot") then
+                h.CFrame = o.CFrame + Vector3.new(0, 5, 0)
+                return
+            end
+        end
+    end
+end)
+
+sec(MiscP, "EXTRA")
+btn(MiscP, "FPS Boost", function()
+    pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+end)
+btn(MiscP, "Copy PlaceId", function()
+    if setclipboard then setclipboard(tostring(game.PlaceId)) end
+end)
+
+show("Main")
+for _, c in ipairs(side:GetChildren()) do
+    if c:IsA("TextButton") and c.Text == "Main" then c.BackgroundColor3 = Color3.fromRGB(50, 45, 80) end
+end
+
+-- drag
+local dragging, d0, p0
+header.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        dragging = true d0 = i.Position p0 = main.Position
+    end
+end)
+header.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+S.UIS.InputChanged:Connect(function(i)
+    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local d = i.Position - d0
+        main.Position = UDim2.new(p0.X.Scale, p0.X.Offset + d.X, p0.Y.Scale, p0.Y.Offset + d.Y)
+    end
+end)
+
+S.UIS.InputBegan:Connect(function(i, gpe)
+    if gpe then return end
+    if i.KeyCode == Enum.KeyCode.K then gui.Enabled = not gui.Enabled end
+end)
